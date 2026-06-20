@@ -1,70 +1,94 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
 require("dotenv").config();
 
 const app = express();
 
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
 
-const User = mongoose.models.User || mongoose.model("User", {
+// Connect MongoDB
+mongoose.connect(process.env.MONGO_URL)
+.then(() => {
+    console.log("MongoDB connected");
+})
+.catch((err) => {
+    console.log("MongoDB error:", err);
+});
 
-    email:String,
-    password:String
+
+// User database model
+const User = mongoose.model("User", {
+
+    email: String,
+
+    password: String,
+
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 
 });
 
 
-app.post("/signup", async (req,res)=>{
+// Signup route
+app.post("/signup", async (req, res) => {
 
-try{
+    try {
 
-await mongoose.connect(process.env.MONGO_URL);
+        const newUser = new User({
+
+            email: req.body.email,
+
+            password: req.body.password
+
+        });
 
 
-const newUser = new User({
+        await newUser.save();
 
-email:req.body.email,
 
-password:req.body.password
+        res.json({
+
+            message: "Premium account created!"
+
+        });
+
+
+    } catch(error) {
+
+
+        console.log(error);
+
+
+        res.status(500).json({
+
+            message: "Something went wrong"
+
+        });
+
+    }
 
 });
 
 
-await newUser.save();
-
-
-res.json({
-
-message:"Premium account created!"
-
-});
-
-
-}catch(error){
-
-console.log(error);
-
-res.status(500).json({
-
-message:error.message
-
-});
-
-}
-
-});
-
-
+// Test page
 app.get("/", (req,res)=>{
 
-res.sendFile(__dirname + "/public/index.html");
+    res.sendFile(__dirname + "/public/index.html");
 
 });
 
 
-module.exports = app;
+// Start server
+app.listen(3000, () => {
+
+    console.log("Server running on port 3000");
+
+});
