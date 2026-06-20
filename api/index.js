@@ -1,7 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
 
 const app = express();
 
@@ -9,36 +8,50 @@ app.use(cors());
 app.use(express.json());
 
 
-mongoose.connect(process.env.MONGO_URL);
-
-
-const User = mongoose.model("User", {
-    email:String,
-    password:String
+const User = mongoose.models.User || mongoose.model("User", {
+    email: String,
+    password: String
 });
 
 
-app.post("/signup", async (req,res)=>{
-
-
-const newUser = new User({
-
-email:req.body.email,
-
-password:req.body.password
-
+app.get("/", (req,res)=>{
+    res.send("Server is working");
 });
 
 
-await newUser.save();
+app.post("/api/signup", async (req,res)=>{
+
+    try {
+
+        await mongoose.connect(process.env.MONGO_URL);
 
 
-res.json({
+        const user = new User({
 
-message:"Premium account created!"
+            email: req.body.email,
 
-});
+            password: req.body.password
 
+        });
+
+
+        await user.save();
+
+
+        res.json({
+            message:"Premium account created!"
+        });
+
+
+    } catch(error){
+
+        console.log(error);
+
+        res.status(500).json({
+            message:error.message
+        });
+
+    }
 
 });
 
